@@ -48,7 +48,7 @@ func main() {
 		log.Fatal(err)
 	}
 	dbDir := filepath.Join(home, ".todoapp")
-	if err := os.MkdirAll(dbDir, 0755); err != nil {
+	if err := os.MkdirAll(dbDir, 0o755); err != nil {
 		log.Fatal(err)
 	}
 
@@ -63,7 +63,7 @@ func main() {
 	a := app.New()
 	a.Settings().SetTheme(&darkTheme{})
 
-	win := a.NewWindow("TodoApp")
+	win := a.NewWindow("mkToDo")
 	win.Resize(fyne.NewSize(740, 600))
 	win.CenterOnScreen()
 
@@ -78,7 +78,7 @@ func main() {
 
 func (s *appState) buildUI() fyne.CanvasObject {
 	// Header
-	title := canvas.NewText("  ✓  TodoApp", color.White)
+	title := canvas.NewText("  ✓  TODOApp", color.White)
 	title.TextSize = 20
 	title.TextStyle = fyne.TextStyle{Bold: true}
 
@@ -123,7 +123,8 @@ func (s *appState) buildUI() fyne.CanvasObject {
 
 func (s *appState) makeTaskRow() fyne.CanvasObject {
 	priDot := canvas.NewCircle(colLowPri)
-	priDot.SetMinSize(fyne.NewSize(12, 12))
+	// priDot.SetMinSize(fyne.NewSize(12, 12))
+	priDot.Resize(fyne.NewSize(12, 12))
 
 	checkBtn := widget.NewButtonWithIcon("", theme.RadioButtonIcon(), func() {})
 	checkBtn.Importance = widget.LowImportance
@@ -166,8 +167,8 @@ func (s *appState) updateTaskRow(i widget.ListItemID, obj fyne.CanvasObject) {
 
 	// container.NewBorder stores children as: [top, bottom, left, right, center...]
 	// With only left & right set (nil top/bottom), indices: 0=top(nil),1=bottom(nil),2=left,3=right
-	left := border.Objects[2].(*fyne.Container)
-	right := border.Objects[3].(*fyne.Container)
+	left := border.Objects[0].(*fyne.Container)
+	right := border.Objects[1].(*fyne.Container)
 
 	priDotBox := left.Objects[0].(*fyne.Container)
 	priDot := priDotBox.Objects[0].(*canvas.Circle)
