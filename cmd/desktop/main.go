@@ -16,8 +16,8 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/user/todoapp/internal/store"
-	"github.com/user/todoapp/internal/todo"
+	"github.com/MihkelHunter/mkToDo/internal/store"
+	"github.com/MihkelHunter/mkToDo/internal/todo"
 )
 
 // ── Colour palette ───────────────────────────────────────────────────────────

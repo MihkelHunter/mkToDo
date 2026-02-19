@@ -14,8 +14,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/user/todoapp/internal/store"
-	"github.com/user/todoapp/internal/todo"
+	"github.com/MihkelHunter/mkToDo/internal/store"
+	"github.com/MihkelHunter/mkToDo/internal/todo"
 )
 
 func main() {

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/user/todoapp/internal/todo"
+	"github.com/MihkelHunter/mkToDo/internal/todo"
 	_ "modernc.org/sqlite" // pure-Go SQLite driver, no CGO required
 )
 
