@@ -279,7 +279,8 @@ func (s *appState) showTaskForm(existing *todo.Task) {
 
 	descEntry := widget.NewMultiLineEntry()
 	descEntry.SetPlaceHolder("Optional description…")
-	descEntry.SetMinRowsVisible(3)
+	descEntry.SetMinRowsVisible(5)
+	descEntry.Wrapping = fyne.TextWrapWord
 
 	prioritySelect := widget.NewSelect([]string{"Low", "Medium", "High"}, nil)
 	prioritySelect.SetSelected("Medium")
@@ -301,12 +302,9 @@ func (s *appState) showTaskForm(existing *todo.Task) {
 		label = "Edit Task"
 	}
 
-	dialog.ShowCustomConfirm(label, "Save", "Cancel", form, func(ok bool) {
-		if !ok {
-			return
-		}
+	doSave := func(taskWin fyne.Window) {
 		if titleEntry.Text == "" {
-			dialog.ShowError(fmt.Errorf("title cannot be empty"), s.win)
+			dialog.ShowError(fmt.Errorf("title cannot be empty"), taskWin)
 			return
 		}
 		pri := parsePriority(prioritySelect.Selected)
@@ -317,11 +315,36 @@ func (s *appState) showTaskForm(existing *todo.Task) {
 			err = s.svc.Edit(existing, titleEntry.Text, descEntry.Text, pri)
 		}
 		if err != nil {
-			dialog.ShowError(err, s.win)
+			dialog.ShowError(err, taskWin)
 			return
 		}
+		taskWin.Close()
 		s.refresh()
-	}, s.win)
+	}
+
+	taskWin := fyne.CurrentApp().NewWindow(label)
+
+	saveBtn := widget.NewButton("Save", func() { doSave(taskWin) })
+	cancelBtn := widget.NewButton("Cancel", func() { taskWin.Close() })
+	btns := container.NewHBox(saveBtn, cancelBtn) // horizontal layout
+
+	content := container.NewVBox(form, btns)
+
+	taskWin.SetContent(content)
+	taskWin.Resize(fyne.NewSize(400, 300))
+	taskWin.CenterOnScreen()
+
+	// --- Keyboard shortcuts ---
+	titleEntry.OnSubmitted = func(_ string) { doSave(taskWin) }
+	descEntry.OnSubmitted = func(_ string) { doSave(taskWin) }
+
+	taskWin.Canvas().SetOnTypedKey(func(k *fyne.KeyEvent) {
+		if k.Name == fyne.KeyEscape {
+			taskWin.Close()
+		}
+	})
+
+	taskWin.Show()
 }
 
 func parsePriority(sel string) todo.Priority {
