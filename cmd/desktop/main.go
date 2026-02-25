@@ -58,7 +58,12 @@ func main() {
 	}
 
 	svc := todo.NewService(st)
-	defer svc.Close()
+	// defer svc.Close()
+	defer func() {
+		if err := svc.Close(); err != nil {
+			log.Printf("Failed to close service: %v", err)
+		}
+	}()
 
 	a := app.New()
 	a.Settings().SetTheme(&darkTheme{})
@@ -77,23 +82,16 @@ func main() {
 // ── Build UI ─────────────────────────────────────────────────────────────────
 
 func (s *appState) buildUI() fyne.CanvasObject {
-	// Header
-	title := canvas.NewText("  ✓  TODOApp", color.White)
-	title.TextSize = 20
-	title.TextStyle = fyne.TextStyle{Bold: true}
-
 	addBtn := widget.NewButton("+ Add Task", func() { s.showTaskForm(nil) })
 	addBtn.Importance = widget.HighImportance
-
-	header := container.NewBorder(nil, nil, title, container.NewPadded(addBtn))
-	headerBG := canvas.NewRectangle(colSurface)
-	headerStack := container.NewStack(headerBG, container.NewPadded(header))
 
 	// Filter tabs
 	allBtn := widget.NewButton("All", func() { s.filter = "all"; s.refresh() })
 	activeBtn := widget.NewButton("Active", func() { s.filter = "active"; s.refresh() })
 	doneBtn := widget.NewButton("Done", func() { s.filter = "done"; s.refresh() })
-	filterRow := container.NewHBox(layout.NewSpacer(), allBtn, activeBtn, doneBtn, layout.NewSpacer())
+
+	filters := container.NewHBox(allBtn, activeBtn, doneBtn)
+	filterRow := container.NewHBox(filters, layout.NewSpacer(), addBtn)
 
 	// Task list
 	s.taskList = widget.NewList(
@@ -111,7 +109,7 @@ func (s *appState) buildUI() fyne.CanvasObject {
 	// Root layout
 	bg := canvas.NewRectangle(colBackground)
 	ui := container.NewBorder(
-		container.NewVBox(headerStack, filterRow),
+		container.NewVBox(filterRow),
 		footerStack,
 		nil, nil,
 		container.NewScroll(s.taskList),
