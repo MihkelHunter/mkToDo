@@ -164,7 +164,6 @@ func (s *appState) updateTaskRow(i widget.ListItemID, obj fyne.CanvasObject) {
 	border := padded.Objects[0].(*fyne.Container)
 
 	// container.NewBorder stores children as: [top, bottom, left, right, center...]
-	// With only left & right set (nil top/bottom), indices: 0=top(nil),1=bottom(nil),2=left,3=right
 	left := border.Objects[0].(*fyne.Container)
 	right := border.Objects[1].(*fyne.Container)
 
