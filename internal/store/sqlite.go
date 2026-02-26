@@ -39,6 +39,7 @@ SELECT 0 WHERE NOT EXISTS (SELECT 1 FROM schema_version);`
 //	"ALTER TABLE tasks ADD COLUMN tags TEXT NOT NULL DEFAULT '';",
 var migrations = []string{
 	// v1 placeholder — add real migrations below this line as needed.
+	`ALTER TABLE tasks ADD COLUMN closed_at TEXT`,
 }
 
 // SQLiteStore implements todo.Repository using SQLite.
@@ -98,10 +99,10 @@ func migrate(db *sql.DB) error {
 
 func (s *SQLiteStore) Create(t *todo.Task) error {
 	res, err := s.db.Exec(
-		`INSERT INTO tasks (title, description, done, priority, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO tasks (title, description, done, priority, created_at, updated_at, closed_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		t.Title, t.Description, boolToInt(t.Done), t.Priority,
-		t.CreatedAt.Format(time.RFC3339), t.UpdatedAt.Format(time.RFC3339),
+		t.CreatedAt.Format(time.RFC3339), t.UpdatedAt.Format(time.RFC3339), nil,
 	)
 	if err != nil {
 		return err
@@ -112,7 +113,7 @@ func (s *SQLiteStore) Create(t *todo.Task) error {
 
 func (s *SQLiteStore) List() ([]*todo.Task, error) {
 	rows, err := s.db.Query(
-		`SELECT id, title, description, done, priority, created_at, updated_at
+		`SELECT id, title, description, done, priority, created_at, updated_at, closed_at
 		 FROM tasks ORDER BY done ASC, priority DESC, created_at ASC`,
 	)
 	if err != nil {
@@ -125,8 +126,9 @@ func (s *SQLiteStore) List() ([]*todo.Task, error) {
 		t := &todo.Task{}
 		var done, priority int
 		var createdAt, updatedAt string
+		var closedAt sql.NullString
 
-		if err := rows.Scan(&t.ID, &t.Title, &t.Description, &done, &priority, &createdAt, &updatedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.Title, &t.Description, &done, &priority, &createdAt, &updatedAt, &closedAt); err != nil {
 			return nil, err
 		}
 
@@ -134,16 +136,43 @@ func (s *SQLiteStore) List() ([]*todo.Task, error) {
 		t.Priority = todo.Priority(priority)
 		t.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
 		t.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAt)
+
+		if closedAt.Valid {
+			ts, err := time.Parse(time.RFC3339, closedAt.String)
+			if err == nil {
+				t.ClosedAt = &ts
+			}
+		} else {
+			t.ClosedAt = nil
+		}
+
 		tasks = append(tasks, t)
 	}
 	return tasks, rows.Err()
 }
 
 func (s *SQLiteStore) Update(t *todo.Task) error {
+	now := time.Now()
+
+	var closedAt interface{}
+
+	if t.Done {
+		// If marking done and not already closed, set timestamp
+		if t.ClosedAt == nil {
+			ts := now
+			t.ClosedAt = &ts
+		}
+		closedAt = t.ClosedAt.Format(time.RFC3339)
+	} else {
+		// If marking undone, clear closed_at
+		t.ClosedAt = nil
+		closedAt = nil
+	}
+
 	_, err := s.db.Exec(
-		`UPDATE tasks SET title=?, description=?, done=?, priority=?, updated_at=? WHERE id=?`,
+		`UPDATE tasks SET title=?, description=?, done=?, priority=?, updated_at=?, closed_at=? WHERE id=?`,
 		t.Title, t.Description, boolToInt(t.Done), t.Priority,
-		t.UpdatedAt.Format(time.RFC3339), t.ID,
+		t.UpdatedAt.Format(time.RFC3339), closedAt, t.ID,
 	)
 	return err
 }

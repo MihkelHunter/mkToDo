@@ -34,6 +34,7 @@ type Task struct {
 	Priority    Priority
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+	ClosedAt    *time.Time
 }
 
 // Repository is the storage contract. Any backend (SQLite, Postgres, memory)
@@ -64,6 +65,7 @@ func (s *Service) Add(title, description string, priority Priority) (*Task, erro
 		Priority:    priority,
 		CreatedAt:   now,
 		UpdatedAt:   now,
+		ClosedAt:    nil,
 	}
 	if err := s.repo.Create(t); err != nil {
 		return nil, err

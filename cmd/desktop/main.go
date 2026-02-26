@@ -204,7 +204,13 @@ func (s *appState) updateTaskRow(i widget.ListItemID, obj fyne.CanvasObject) {
 	if t.Description != "" {
 		descLabel.SetText(t.Description)
 	} else {
-		descLabel.SetText(t.Priority.String() + " priority · " + t.CreatedAt.Format("Jan 2"))
+		text := t.Priority.String() + " priority · " + " Created " + t.CreatedAt.Format("Jan 2")
+
+		if t.ClosedAt != nil {
+			text += " · Closed " + t.ClosedAt.Format("Jan 2")
+		}
+
+		descLabel.SetText(text)
 	}
 
 	task := t
